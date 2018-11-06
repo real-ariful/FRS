@@ -29,11 +29,11 @@ def handle_client(client, client_address):
     clients[client] = client_address
     while True:
         msg = client.recv(BUFSIZ)
-        if msg != bytes("{quit}"):
+        if msg != bytes("{quit}", "utf8"):
             now = datetime.datetime.now()
             date = now.strftime('%Y-%m-%d %H:%M:%S')
             day = now.strftime("%A")
-            timenow = now.strftime('%H:%M:%S.%SS')
+            timenow = now.strftime('%H:%M:%S.%S')
             msg = msg.decode("utf-8")
             print("DATA Received from client-"+name+":" + msg)
             gatewayid = msg.split('_')[0]
@@ -105,9 +105,6 @@ def handle_client(client, client_address):
             if match > 0:
                 print("Match is: " + str(match))
                 print("Student id:"+str(studentid)+"in roomno:"+str(roomno)+"has Course:"+course_id)
-
-        newresult = crsmatchmdsid(bleid,gatewayid,"time")
-        print(newresult)
         
 
 """Function getting from bleid to studentid"""
@@ -187,18 +184,6 @@ def crsmatchmdsid(sid, course_id):
     result5 = cursor5.execute(query5)
     #print(result5)
     tempvar5 = cursor5.fetchone()
-    match = tempvar5[0]
-    return match
-
-def gbblelogs(bleid, gid,timedate):
-    cnx = mysql.connector.connect(host='127.0.0.1',user='root', password="", database='frs_school')
-    cursor = cnx5.cursor()
-    #script1= ("SELECT COUNT(*) FROM frs_blelocation WHERE bleuid ='"+bleid+"'")
-    query6 = ("SELECT COUNT(*) FROM frs_blelogs WHERE bleid='" + str(bleid) + "' AND gatewayid='" + str(gid) +"'")
-    #print(query6)
-    result6 = cursor.execute(query6)
-    #print(result5)
-    tempvar6 = cursor6.fetchone()
     match = tempvar5[0]
     return match
 
