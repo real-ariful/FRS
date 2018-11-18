@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import date, datetime, timedelta
 import mysql.connector
 import datetime
+import json
 
 """Sets up handling for incoming clients."""
 def accept_incoming_connections():    
@@ -29,83 +30,118 @@ def handle_client(client, client_address):
     clients[client] = client_address
     while True:
         msg = client.recv(BUFSIZ)
-        if msg != bytes("{quit}", "utf8"):
-            now = datetime.datetime.now()
-            date = now.strftime('%Y-%m-%d %H:%M:%S')
-            day = now.strftime("%A")
-            timenow = now.strftime('%H:%M:%S.%S')
-            msg = msg.decode("utf-8")
-            print("DATA Received from client-"+name+":" + msg)
-            gatewayid = msg.split('_')[0]
-            bleid = msg.split('_')[1]
-            rssi = msg.split('_')[2]
-            ble_location = rssi = msg.split('_')[3]
-            distance = rssi = msg.split('_')[4]
+        now = datetime.datetime.now()
+        date = now.strftime('%Y-%m-%d %H:%M:%S')
+        day = now.strftime("%A")
+        timenow = now.strftime('%H:%M:%S.%S')
+        msg = msg.decode("utf-8")
+        #print(msg)
+        #print(type(msg))#'str'
 
-            print(bleid)
-##            print(gatewayid)
-##            print(type(bleid))
-##            print(rssi)
-##            print(ble_location)
-##            print(distance)
+        msgjson = msg.replace("'", "\"")
+        msgdict =json.loads(msgjson)
+        print(type(msgdict))
+        print(msgdict["bleid"])
 
-            #Checking input for bleid in db table frs_school for today's date
-            cnx = mysql.connector.connect(host='127.0.0.1',user='root', password="", database='frs_school')
-            cursor = cnx.cursor()            
-            script1= ("SELECT COUNT(*) FROM frs_blelocation WHERE bleuid ='" + bleid + "'")
+        gwid = msgdict["gatewayid"]
+        bleid = msgdict["bleid"]
+        temp = msgdict["temp"]
+        rssi = msgdict["rssi"]
+        
+        
+
+        #Write data to text file
+        data2txt(date,msg)
+        
+
+#         if msg != bytes("{quit}", "utf8"):
+#             now = datetime.datetime.now()
+#             date = now.strftime('%Y-%m-%d %H:%M:%S')
+#             day = now.strftime("%A")
+#             timenow = now.strftime('%H:%M:%S.%S')
+#             msg = msg.decode("utf-8")
+#             print("DATA Received from client-"+name+":" + msg)
+#             gatewayid = msg.split('_')[0]
+#             bleid = msg.split('_')[1]
+#             rssi = msg.split('_')[2]
+#             ble_location = rssi = msg.split('_')[3]
+#             distance = rssi = msg.split('_')[4]
+
+#             print(bleid)
+# ##            print(gatewayid)
+# ##            print(type(bleid))
+# ##            print(rssi)
+# ##            print(ble_location)
+# ##            print(distance)
+
+#             #Checking input for bleid in db table frs_school for today's date
+#             cnx = mysql.connector.connect(host='127.0.0.1',user='root', password="", database='frs_school')
+#             cursor = cnx.cursor()            
+#             script1= ("SELECT COUNT(*) FROM frs_blelocation WHERE bleuid ='" + bleid + "'")
 
             
-            result = cursor.execute(script1)
-            tempvar = cursor.fetchone()
-            #print(tempvar)#gives(1,)
-            #print("Type tempvar-->"+str(tempvar)+ "-->" +str(type(tempvar)))
-            rowcount = tempvar[0]#gives 1
-            #print("Type tempvar[0]-->" + str(tempvar) +"-->"+str(type(tempvar[0])))
-            #print("Count result:" + str(int(rowcount)))
+#             result = cursor.execute(script1)
+#             tempvar = cursor.fetchone()
+#             #print(tempvar)#gives(1,)
+#             #print("Type tempvar-->"+str(tempvar)+ "-->" +str(type(tempvar)))
+#             rowcount = tempvar[0]#gives 1
+#             #print("Type tempvar[0]-->" + str(tempvar) +"-->"+str(type(tempvar[0])))
+#             #print("Count result:" + str(int(rowcount)))
 
 
-            #Insert data into table frs_school if rowcount is 0
-            if rowcount == 0:            
-                query = ("INSERT INTO frs_blelocation (bleuid,gatewayid,datetime,rssi,ble_location,distance)VALUES(%s,%s,%s,%s,%s,%s)",
-                         (bleid,gatewayid,str(datetime),rssi,ble_location,distance))
-                cursor.execute(*query)
-                cnx.commit()
-                cursor.close()
-                cnx.close()
-                print("DATA INSERTED TO table frs_blelocation")
+#             #Insert data into table frs_school if rowcount is 0
+#             if rowcount == 0:            
+#                 query = ("INSERT INTO frs_blelocation (bleuid,gatewayid,datetime,rssi,ble_location,distance)VALUES(%s,%s,%s,%s,%s,%s)",
+#                          (bleid,gatewayid,str(datetime),rssi,ble_location,distance))
+#                 cursor.execute(*query)
+#                 cnx.commit()
+#                 cursor.close()
+#                 cnx.close()
+#                 print("DATA INSERTED TO table frs_blelocation")
 
-            #Update data into table frs_school if rowcount>0
-            if rowcount > 0:
-                print("rowcount greater than 0------------------")
-                # prepare query and data
-                query = """ UPDATE frs_blelocation
-                            SET gatewayid=%s,datetime=%s,rssi=%s,ble_location=%s,distance =%s
-                            WHERE bleuid=%s"""             
-                data = (gatewayid,str(datetime),rssi,ble_location,distance,bleid)                
-                cursor.execute(query, data)
-                cnx.commit()         
-                cursor.close()
-                cnx.close()
-        else:
-            client.close()
-            del clients[client]
-            break
-        #print(bleid)
-        studentid = sidfrombleid(bleid)
-        print("Student id of student is" + str(studentid))
+#             #Update data into table frs_school if rowcount>0
+#             if rowcount > 0:
+#                 print("rowcount greater than 0------------------")
+#                 # prepare query and data
+#                 query = """ UPDATE frs_blelocation
+#                             SET gatewayid=%s,datetime=%s,rssi=%s,ble_location=%s,distance =%s
+#                             WHERE bleuid=%s"""             
+#                 data = (gatewayid,str(datetime),rssi,ble_location,distance,bleid)                
+#                 cursor.execute(query, data)
+#                 cnx.commit()         
+#                 cursor.close()
+#                 cnx.close()
+#         else:
+#             client.close()
+#             del clients[client]
+#             break
+#         #print(bleid)
+#         studentid = sidfrombleid(bleid)
+#         print("Student id of student is" + str(studentid))
 
-        roomno = rnofromgtw(gatewayid)
-        print("Room no of student is" + str(roomno))
+#         roomno = rnofromgtw(gatewayid)
+#         print("Room no of student is" + str(roomno))
 
-        course_id = crsfromdtday(date, day, roomno, timenow)
-        if course_id != None:
-            print("Course of student is" + str(course_id))
+#         course_id = crsfromdtday(date, day, roomno, timenow)
+#         if course_id != None:
+#             print("Course of student is" + str(course_id))
 
-            match = crsmatchmdsid(studentid, course_id)
-            if match > 0:
-                print("Match is: " + str(match))
-                print("Student id:"+str(studentid)+"in roomno:"+str(roomno)+"has Course:"+course_id)
+#             match = crsmatchmdsid(studentid, course_id)
+#             if match > 0:
+#                 print("Match is: " + str(match))
+#                 print("Student id:"+str(studentid)+"in roomno:"+str(roomno)+"has Course:"+course_id)
         
+"""Function writing to text files"""
+def data2txt(date,msg):
+    try:
+        f = open('serverble.txt','a')
+        f.write(str(date)+": "+str(msg)+"\n")
+        f.close()
+        print("Data written to txt files")
+    except Exception as e:
+        raise e
+        print("Error in data writing to text file")
+
 
 """Function getting from bleid to studentid"""
 def sidfrombleid(bleid):

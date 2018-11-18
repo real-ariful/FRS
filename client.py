@@ -6,7 +6,8 @@ import time
 def send():  
     """Handles sending of messages."""
     msg = "1_aaa_-49 dBm_(150,650)_10"
-    client_socket.send(bytes(msg, "utf8"))
+    msg = {"gatewayid":"1234", "bleid":"12345","temp":"20","rssi":"-49dBm"}
+    client_socket.send(bytes(str(msg), "utf8"))
     if msg == "{quit}":
         client_socket.close()
     
